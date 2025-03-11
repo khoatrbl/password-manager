@@ -4,18 +4,40 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginStatus, setLoginStatus] = useState<boolean | null>(null); // ✅ Null initially (No status)
+  const [attemptedLogin, setAttemptedLogin] = useState(false); // ✅ Track if user clicked login
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (username === "admin" && password === "admin") {
-      navigate("/home");
-    } else {
-      console.log("Wrong credentials!!");
-    }
+    // if (username === "admin" && password === "admin") {
+    //   navigate("/home");
+    // } else {
+    //   console.log("Wrong credentials!!");
+    // }
+    setAttemptedLogin(true);
 
-    console.log("Logged in with: ", { username, password });
+    fetch("http://localhost:8080/api/v1/user/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        if (data.display_name !== "") {
+          setLoginStatus(true);
+          navigate(`/home/${data.display_name}`);
+        } else {
+          setLoginStatus(false);
+        }
+      });
   };
 
   return (
@@ -65,6 +87,15 @@ export default function Login() {
             </a>
           </p>
         </form>
+        {attemptedLogin && loginStatus === false && (
+          <div
+            className="p-4 mb-4 mt-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+            role="alert"
+          >
+            <span className="font-medium">Danger alert!</span> Incorrect
+            username or passwords!
+          </div>
+        )}
       </div>
     </div>
   );
